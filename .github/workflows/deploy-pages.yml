@@ -1,0 +1,117 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Create docs directory structure
+        run: |
+          mkdir -p docs
+          cp -r artifacts/* docs/
+          
+          # Create a simple index.html if it doesn't exist
+          if [ ! -f docs/index.html ]; then
+            cat > docs/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Sparse Attention Hub - Benchmark Results</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+                  .container { max-width: 1200px; margin: 0 auto; }
+                  h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+                  h2 { color: #34495e; margin-top: 30px; }
+                  .section { margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+                  .plot-link { display: inline-block; margin: 10px; padding: 10px 20px; 
+                              background: #3498db; color: white; text-decoration: none; 
+                              border-radius: 5px; transition: background 0.3s; }
+                  .plot-link:hover { background: #2980b9; }
+                  .description { margin: 15px 0; color: #555; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>Sparse Attention Hub - Benchmark Results</h1>
+                  
+                  <div class="section">
+                      <h2>About</h2>
+                      <p>This repository contains benchmark results and interactive visualizations from the Sparse Attention Hub research project. 
+                      These results demonstrate the performance of various sparse attention mechanisms across different tasks and datasets.</p>
+                  </div>
+
+                  <div class="section">
+                      <h2>Interactive Visualizations</h2>
+                      
+                      <h3>Loogle Long Dependency Summarization</h3>
+                      <div class="description">
+                          <p>Analysis of sparse attention performance on long dependency summarization tasks using the Loogle dataset.</p>
+                      </div>
+                      <a href="micro_tests/plots/loogle_longdep_summarization/config_comparison.html" class="plot-link">Config Comparison</a>
+                      <a href="micro_tests/plots/loogle_longdep_summarization/config_type_analysis.html" class="plot-link">Config Type Analysis</a>
+                      <a href="micro_tests/plots/loogle_longdep_summarization/error_vs_density.html" class="plot-link">Error vs Density</a>
+                      <a href="micro_tests/plots/loogle_longdep_summarization/layer_analysis.html" class="plot-link">Layer Analysis</a>
+                      
+                      <h3>LongBench Passage Retrieval</h3>
+                      <div class="description">
+                          <p>Performance analysis on passage retrieval tasks using the LongBench dataset.</p>
+                      </div>
+                      <p><em>Visualizations coming soon...</em></p>
+                  </div>
+
+                  <div class="section">
+                      <h2>Data Files</h2>
+                      <p>Raw data files are available in the <code>micro_tests/</code> directory:</p>
+                      <ul>
+                          <li><a href="micro_tests/metadata.tsv">metadata.tsv</a> - Benchmark metadata and configuration information</li>
+                          <li><a href="micro_tests/vector.tsv">vector.tsv</a> - Vector representations and embeddings</li>
+                      </ul>
+                  </div>
+
+                  <div class="section">
+                      <h2>Repository Information</h2>
+                      <p>For more information about the Sparse Attention Hub project, visit the main repository: 
+                      <a href="https://github.com/[username]/sparse-attention-hub">sparse-attention-hub</a></p>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 
